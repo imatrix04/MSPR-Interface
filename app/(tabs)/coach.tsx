@@ -167,7 +167,7 @@ export default function Coach() {
 
   return (
     <ScrollView 
-      contentContainerStyle={[{ padding: 16, backgroundColor }]}
+      contentContainerStyle={[{ padding: 16, paddingBottom: 100, backgroundColor }]}
       accessible={true}
     > 
       <Text 

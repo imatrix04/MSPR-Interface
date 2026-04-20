@@ -54,8 +54,8 @@ export default function Profile() {
   const primaryColor = useThemeColor({}, 'primary');
   const primaryForeground = useThemeColor({}, 'primaryForeground');
   const destructiveColor = useThemeColor({}, 'destructive');
+  const mutedBg = useThemeColor({}, 'muted'); 
 
-  // TODO: Move these function to theire own media file
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 1 });
     if (!result.canceled) setProfile({ ...profile, photoUri: result.assets[0].uri });
@@ -83,20 +83,49 @@ export default function Profile() {
             style={[
               styles.chip, 
               { borderColor },
-              selectedValue === opt ? { backgroundColor: primaryColor, borderColor: primaryColor } : { backgroundColor: cardColor }
+              selectedValue === opt 
+                ? { backgroundColor: primaryColor, borderColor: primaryColor } 
+                : { backgroundColor: mutedBg } 
             ]}
             onPress={() => onSelect(opt)}
           >
-            <Text style={{ color: selectedValue === opt ? primaryForeground : cardTextColor, fontSize: 13, fontWeight: "600" }}>{opt}</Text>
+            <Text style={{ 
+              color: selectedValue === opt ? primaryForeground : cardTextColor, 
+              fontSize: 13, 
+              fontWeight: "600" 
+            }}>
+              {opt}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
     </View>
   );
 
+  const CustomCheckbox = ({ label, value, onChange }: any) => (
+    <TouchableOpacity 
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: value }}
+      onPress={onChange} 
+      style={styles.checkboxRow}
+    >
+      <View style={[
+        styles.checkbox, 
+        { 
+          borderColor: value ? primaryColor : borderColor, 
+          backgroundColor: value ? primaryColor : mutedBg 
+        }
+      ]}>
+        {/* On ajoute une petite encoche blanche quand c'est coché */}
+        {value && <Text style={{ color: primaryForeground, fontWeight: "bold", fontSize: 14, marginTop: -2 }}>✓</Text>}
+      </View>
+      <Text style={{ color: cardTextColor }}>{label}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 16, backgroundColor, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, backgroundColor, paddingBottom: 100 }}>
         <ThemedText type="title" style={{ marginBottom: 4 }}>Mon Profil IA</ThemedText>
         <Text style={{ color: mutedColor, marginBottom: 24, fontSize: 15 }}>
           Ces données permettent à l'Intelligence Artificielle de générer des recommandations sur-mesure.
@@ -125,6 +154,7 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* SECTION NUTRITION */}
         <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
           <Text style={[styles.cardTitle, { color: primaryColor }]}>🥗 Paramètres Nutrition</Text>
           
@@ -145,22 +175,20 @@ export default function Profile() {
           <View style={styles.section}>
             <Text style={[styles.label, { color: cardTextColor }]}>Allergies & Intolérances</Text>
             <View style={styles.checkboxContainer}>
+              {/* Utilisation du nouveau composant Checkbox */}
               {Object.entries(profile.allergies).map(([key, value]) => (
-                <TouchableOpacity 
-                  key={key} 
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: value }}
-                  onPress={() => setProfile({...profile, allergies: {...profile.allergies, [key]: !value}})} 
-                  style={styles.checkboxRow}
-                >
-                  <View style={[styles.checkbox, { borderColor, backgroundColor: value ? primaryColor : "transparent" }]} />
-                  <Text style={{ color: cardTextColor }}>{key}</Text>
-                </TouchableOpacity>
+                <CustomCheckbox 
+                  key={key}
+                  label={key}
+                  value={value}
+                  onChange={() => setProfile({...profile, allergies: {...profile.allergies, [key]: !value}})}
+                />
               ))}
             </View>
           </View>
         </View>
 
+        {/* SECTION SPORT */}
         <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
           <Text style={[styles.cardTitle, { color: primaryColor }]}>💪 Paramètres Sportifs</Text>
           
@@ -181,17 +209,14 @@ export default function Profile() {
           <View style={styles.section}>
             <Text style={[styles.label, { color: cardTextColor }]}>Équipement disponible</Text>
             <View style={styles.checkboxContainer}>
+              {/* Utilisation du nouveau composant Checkbox */}
               {Object.entries(profile.equipment).map(([key, value]) => (
-                <TouchableOpacity 
-                  key={key} 
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: value }}
-                  onPress={() => setProfile({...profile, equipment: {...profile.equipment, [key]: !value}})} 
-                  style={styles.checkboxRow}
-                >
-                  <View style={[styles.checkbox, { borderColor, backgroundColor: value ? primaryColor : "transparent" }]} />
-                  <Text style={{ color: cardTextColor }}>{key}</Text>
-                </TouchableOpacity>
+                <CustomCheckbox 
+                  key={key}
+                  label={key}
+                  value={value}
+                  onChange={() => setProfile({...profile, equipment: {...profile.equipment, [key]: !value}})}
+                />
               ))}
             </View>
           </View>
@@ -201,7 +226,7 @@ export default function Profile() {
             <TextInput 
               value={profile.limitations} 
               onChangeText={t => setProfile({...profile, limitations: t})} 
-              style={[styles.input, { borderColor: borderColor, backgroundColor: backgroundColor, color: cardTextColor, height: 80 }]} 
+              style={[styles.input, { borderColor: borderColor, backgroundColor: cardColor, color: cardTextColor, height: 80 }]} 
               multiline
               placeholder="Ex: Douleur épaule, asthme..."
               placeholderTextColor={mutedColor}
@@ -237,6 +262,14 @@ const styles = StyleSheet.create({
   chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1 },
   checkboxContainer: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   checkboxRow: { flexDirection: "row", alignItems: "center", width: "45%", marginBottom: 8 },
-  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, marginRight: 8 },
+  checkbox: { 
+    width: 24, 
+    height: 24, 
+    borderRadius: 6, 
+    borderWidth: 1, 
+    marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center"
+  },
   actionBtn: { padding: 16, borderRadius: 12, alignItems: "center" }
 });

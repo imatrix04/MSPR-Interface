@@ -71,7 +71,7 @@ export default function Home() {
   // TODO: Decompose everything into it's own component
   return (
     <ScrollView 
-      contentContainerStyle={[styles.container, { backgroundColor }]}
+      contentContainerStyle={[styles.container, { backgroundColor, paddingBottom: 100 }]}
       accessible={true} 
     > 
       <View style={styles.header}>
