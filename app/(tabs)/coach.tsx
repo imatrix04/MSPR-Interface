@@ -1,9 +1,16 @@
+// TODO: Follow the react conventions.
+// In React, files shouldn't be larger than 150 lines.
+// There are 235 lines in this file. We need to optimize
+// it or the page will be heavy and become hard to
+// maintain.
+
 import { useThemeColor } from '@/hooks/use-theme-color';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Image, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { MockData } from '../mockdata';
 
 interface NutritionAnalysis {
   dishName: string;
@@ -41,6 +48,7 @@ export default function Coach() {
 
   const nutritionAlert = "L'IA a détecté un déficit en protéines hier.";
 
+  // TODO: Move these mock value elsewhere.
   const mealSuggestions = [
     { id: 1, name: "Salade de poulet grillé", calories: 450, proteins: 35, price: "~6€", time: "20 min" },
     { id: 2, name: "Bol de quinoa aux légumes", calories: 380, proteins: 15, price: "~4€", time: "25 min" },
@@ -54,6 +62,9 @@ export default function Coach() {
     { id: 4, name: "Burpees", sets: "3 x 10", rest: "90s", target: "Corps entier" },
   ];
 
+  // FIXME: Remove unused value
+  // TODO: Move these into a theme config file.
+  // This is to follow the React conventions.
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const cardColor = useThemeColor({}, 'card');
@@ -62,6 +73,8 @@ export default function Coach() {
   const primaryColor = useThemeColor({}, 'primary');
   const borderColor = useThemeColor({}, 'border');
 
+  // TODO: Move this function in a media control file
+  // This is to follow the React conventions.
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -70,6 +83,8 @@ export default function Coach() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
+      // FIXME: Deprecated.
+      // This is deprecated. We need to use ImagePicker.MediaType
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 1,
@@ -80,6 +95,8 @@ export default function Coach() {
     }
   };
 
+  // TODO: Move this function in a media control file
+  // This is to follow the React conventions.
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -97,6 +114,7 @@ export default function Coach() {
     }
   };
 
+  // TODO: Move this function in a service file
   const handleAnalyze = async () => {
     if (!selectedImage) return;
     setIsConfirmed(false);
@@ -117,15 +135,15 @@ export default function Coach() {
       });
 
       const data = await response.json();
-      
-      if (response.ok && data.status === "success") {
+
+      if (data.status === "success") {
         setAnalysisResult({
           dishName: data.prediction,
           confidence: data.confidence_percent,
-          calories: 450,
-          proteins: 25,
-          carbs: 50,
-          fats: 15,
+          calories: MockData['burger'].calories,
+          proteins: MockData['burger'].protein,
+          carbs: MockData['burger'].carbs,
+          fats: MockData['burger'].fat,
         });
       } else {
         Alert.alert("Erreur IA", data.message || "Impossible d'analyser l'image.");

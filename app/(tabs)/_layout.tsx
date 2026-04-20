@@ -1,11 +1,13 @@
-import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
-import { Home, Bot, User } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
+import { Tabs } from 'expo-router';
+import { Bot, Home, User } from 'lucide-react-native';
+import { useColorScheme } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  // FIXME: Why don't we just give useColorScheme()?
+  // It only returns 'light', 'dark' and possibly null/undefined.
   const theme = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
   return (

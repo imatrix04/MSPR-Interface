@@ -55,6 +55,7 @@ export default function Profile() {
   const primaryForeground = useThemeColor({}, 'primaryForeground');
   const destructiveColor = useThemeColor({}, 'destructive');
 
+  // TODO: Move these function to theire own media file
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 1 });
     if (!result.canceled) setProfile({ ...profile, photoUri: result.assets[0].uri });
