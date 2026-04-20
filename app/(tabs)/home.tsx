@@ -1,12 +1,28 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-import { Bell, Camera } from "lucide-react-native";
-import Svg, { Circle } from "react-native-svg";
 import { useThemeColor } from '@/hooks/use-theme-color';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Bell, Camera } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 export default function Home() {
-  // Données conservées
-  const userName = "Marie";
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userString = await AsyncStorage.getItem("userData");
+        if (userString) {
+          const user = JSON.parse(userString);
+          setFirstName(user.firstname); 
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
   const caloriesConsumed = 1450;
   const caloriesGoal = 2000;
   const caloriesProgress = (caloriesConsumed / caloriesGoal) * 100;
@@ -37,31 +53,50 @@ export default function Home() {
   const strokeDashoffset = circumference * (1 - caloriesProgress / 100);
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor }]}> 
+    <ScrollView 
+      contentContainerStyle={[styles.container, { backgroundColor }]}
+      accessible={true} 
+    > 
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: textColor }]}> 
-              Bonjour <Text style={styles.bold}>{userName}</Text> !{"\n"}
+            <Text 
+              style={[styles.title, { color: textColor }]}
+              accessibilityRole="header"
+            > 
+              Bonjour <Text style={styles.bold}>{firstName ? firstName : "Bob"} 👋</Text> !{"\n"}
               Prêt(e) pour tes objectifs ?
             </Text>
             <Text style={[styles.subtitle, { color: mutedColor }]}> 
               Tes données sont à jour.
             </Text>
           </View>
-          <Pressable style={styles.notificationBtn}>
+          <Pressable 
+            style={styles.notificationBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Voir les notifications"
+          >
             <Bell size={24} color={textColor} />
             <View style={[styles.notificationDot, { backgroundColor: destructiveColor }]} />
           </Pressable>
         </View>
       </View>
 
-      <Pressable style={[styles.mainActionBtn, { backgroundColor: primaryColor }]}> 
+      <Pressable 
+        style={[styles.mainActionBtn, { backgroundColor: primaryColor }]}
+        accessibilityRole="button"
+        accessibilityLabel="Analyser un repas avec la caméra"
+        accessibilityHint="Ouvre l'appareil photo pour calculer les calories de votre plat"
+      >
         <Camera size={32} color={primaryForeground} />
-        <Text style={[styles.mainActionText, { color: primaryForeground }]}>📸 Analyser mon repas</Text>
+        <Text style={[styles.mainActionText, { color: primaryForeground }]}>Analyser mon repas</Text>
       </Pressable>
 
-      <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}> 
+      <View 
+        style={[styles.card, { backgroundColor: cardColor, borderColor }]}
+        accessible={true}
+        accessibilityLabel={`Calories consommées : ${caloriesConsumed} sur ${caloriesGoal} kcal.`}
+      >
         <Text style={[styles.cardTitle, { color: cardTextColor }]}>Calories du jour</Text>
         <View style={styles.circleContainer}>
           <Svg width={192} height={192} viewBox="0 0 192 192">

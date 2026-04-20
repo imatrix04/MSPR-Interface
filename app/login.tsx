@@ -1,21 +1,21 @@
-import { useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Keyboard, 
-  TouchableWithoutFeedback,
-  ActivityIndicator
-} from "react-native";
-import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
+} from "react-native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -52,6 +52,7 @@ export default function Login() {
       }
 
       await AsyncStorage.setItem("authToken", data.token);
+      await AsyncStorage.setItem("userData", JSON.stringify(data.user));
       router.replace("/(tabs)/home");
     } catch (err) {
       setError("Serveur introuvable. Vérifiez l'IP et le port dans le .env.");

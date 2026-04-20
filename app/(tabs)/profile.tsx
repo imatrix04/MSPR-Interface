@@ -1,29 +1,50 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, Alert, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImagePicker from "expo-image-picker";
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function Profile() {
   const router = useRouter();
   
   const [profile, setProfile] = useState({
-    name: "Marie Dupont",
-    // Critères Nutrition
+    name: "",
     nutritionGoal: "Perte de poids", 
     diet: "Omnivore", 
     budget: "Moyen",
     allergies: { Gluten: false, Lactose: false, Arachides: true, Crustacés: false },
-    // Critères Sport
     sportGoal: "Renforcement musculaire", 
     fitnessLevel: "Débutant", 
     equipment: { "Salle de sport": false, "Poids à domicile": true, "Aucun (Poids du corps)": false },
     limitations: "Douleur au genou droit",
     photoUri: null as string | null,
   });
+
+  const [initials, setInitials] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userString = await AsyncStorage.getItem("userData");
+        if (userString) {
+          const user = JSON.parse(userString);
+          const fullName = `${user.firstname} ${user.lastname}`;
+          
+          setProfile(prev => ({ ...prev, name: fullName }));
+          
+          const firstInitial = user.firstname ? user.firstname.charAt(0).toUpperCase() : "";
+          const lastInitial = user.lastname ? user.lastname.charAt(0).toUpperCase() : "";
+          setInitials(firstInitial + lastInitial);
+        }
+      } catch (error) {
+        console.error("Erreur de récupération profil", error);
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const backgroundColor = useThemeColor({}, 'background');
   const cardColor = useThemeColor({}, 'card');
@@ -41,6 +62,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("authToken");
+    await AsyncStorage.removeItem("userData");
     router.replace("/login");
   };
 
@@ -85,7 +107,9 @@ export default function Profile() {
               <Image source={{ uri: profile.photoUri }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatarPlaceholder, { backgroundColor: primaryColor }]}>
-                <Text style={{ color: primaryForeground, fontSize: 32, fontWeight: "bold" }}>MD</Text>
+                <Text style={{ color: primaryForeground, fontSize: 32, fontWeight: "bold" }}>
+                  {initials || "?"}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -112,7 +136,6 @@ export default function Profile() {
 
           <Selector 
             label="Préférences alimentaires" 
-            // Remplacement de Vegan par Végétalien et Pescétarien par Poisson uniquement
             options={["Omnivore", "Végétarien", "Végétalien", "Poisson uniquement"]} 
             selectedValue={profile.diet} 
             onSelect={(v: string) => setProfile({...profile, diet: v})} 
