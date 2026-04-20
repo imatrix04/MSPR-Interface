@@ -94,38 +94,40 @@ export default function Coach() {
 
   const handleAnalyze = async () => {
     if (!selectedImage) return;
-    setIsConfirmed(false); 
+    setIsConfirmed(false);
+    
+    const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
     try {
       const formData = new FormData();
-      // @ts-ignore
       formData.append("image", {
         uri: selectedImage,
         name: "photo.jpg",
         type: "image/jpeg",
-      });
+      } as any);
 
-      const response = await fetch("http://127.0.0.1:5000/predict", {
+      const response = await fetch(`${API_URL}/api/ai/predict`, {
         method: "POST",
         body: formData,
-        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const data = await response.json();
-      if (data.status === "success") {
+      
+      if (response.ok && data.status === "success") {
         setAnalysisResult({
           dishName: data.prediction,
           confidence: data.confidence_percent,
-          calories: 0,
-          proteins: 0,
-          carbs: 0,
-          fats: 0,
+          calories: 450,
+          proteins: 25,
+          carbs: 50,
+          fats: 15,
         });
       } else {
-        Alert.alert("Erreur IA", data.message);
+        Alert.alert("Erreur IA", data.message || "Impossible d'analyser l'image.");
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Erreur", "Impossible de joindre l'API Python.");
+      Alert.alert("Erreur", "Impossible de joindre le serveur. Vérifiez votre connexion.");
     }
   };
 
@@ -153,7 +155,7 @@ export default function Coach() {
       </Text>
       
       <Text style={{ fontSize: 16, color: mutedColor, marginBottom: 16 }}>
-        Ravi de vous voir, {firstName || "Aventurier"} !
+        Ravi de vous voir, {firstName || "Bob"} !
       </Text>
 
       <View style={{ flexDirection: "row", marginBottom: 16 }}>
