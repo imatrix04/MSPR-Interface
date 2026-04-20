@@ -3,10 +3,12 @@
 // There are 235 lines in this file. We need to optimize
 // it or the page will be heavy and become hard to
 // maintain.
+
 import { useThemeColor } from '@/hooks/use-theme-color';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
-import { Alert, Button, Image, Pressable, ScrollView, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Alert, Button, Image, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { MockData } from '../mockdata';
 
 interface NutritionAnalysis {
@@ -24,6 +26,20 @@ export default function Coach() {
   const [mode, setMode] = useState<CoachMode>("nutrition");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
+  const [firstName, setFirstName] = useState(""); 
+  const [isConfirmed, setIsConfirmed] = useState(false); 
+
+  // Récupération du prénom
+  useEffect(() => {
+    const fetchUser = async () => {
+      const userString = await AsyncStorage.getItem("userData");
+      if (userString) {
+        const user = JSON.parse(userString);
+        setFirstName(user.firstname);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const nutritionAlert = "L'IA a détecté un déficit en protéines hier.";
 
@@ -50,7 +66,6 @@ export default function Coach() {
   const cardTextColor = useThemeColor({}, 'cardForeground');
   const mutedColor = useThemeColor({}, 'mutedForeground');
   const primaryColor = useThemeColor({}, 'primary');
-  const destructiveColor = useThemeColor({}, 'destructive');
   const borderColor = useThemeColor({}, 'border');
 
   // TODO: Move this function in a media control file
@@ -97,20 +112,21 @@ export default function Coach() {
   // TODO: Move this function in a service file
   const handleAnalyze = async () => {
     if (!selectedImage) return;
+    setIsConfirmed(false);
+    
+    const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
     try {
       const formData = new FormData();
-      // TODO: Check if possible to continue without ts-ignore
-      // @ts-ignore
       formData.append("image", {
         uri: selectedImage,
         name: "photo.jpg",
         type: "image/jpeg",
-      });
+      } as any);
 
-      const response = await fetch("http://127.0.0.1:5000/predict", {
+      const response = await fetch(`${API_URL}/api/ai/predict`, {
         method: "POST",
         body: formData,
-        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const data = await response.json();
@@ -124,26 +140,47 @@ export default function Coach() {
           carbs: MockData['burger'].carbs,
           fats: MockData['burger'].fat,
         });
+      } else {
+        Alert.alert("Erreur IA", data.message || "Impossible d'analyser l'image.");
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Erreur", "Impossible de joindre l'API Python.");
+      Alert.alert("Erreur", "Impossible de joindre le serveur. Vérifiez votre connexion.");
     }
+  };
+
+  const handleConfirmIA = () => {
+    setIsConfirmed(true);
+    Alert.alert("Merci !", "Votre confirmation aide l'IA à apprendre.");
   };
 
   const handleReset = () => {
     setSelectedImage(null);
     setAnalysisResult(null);
+    setIsConfirmed(false);
   };
 
   return (
-    <ScrollView contentContainerStyle={[{ padding: 16, backgroundColor }]}> 
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 12, color: cardTextColor }}>Mon Coach IA</Text>
+    <ScrollView 
+      contentContainerStyle={[{ padding: 16, backgroundColor }]}
+      accessible={true}
+    > 
+      <Text 
+        style={{ fontSize: 24, fontWeight: "bold", marginBottom: 4, color: cardTextColor }}
+        accessibilityRole="header"
+      >
+        Mon Coach IA
+      </Text>
+      
+      <Text style={{ fontSize: 16, color: mutedColor, marginBottom: 16 }}>
+        Ravi de vous voir, {firstName || "Bob"} !
+      </Text>
 
-      {/* Toggle Nutrition / Sport */}
       <View style={{ flexDirection: "row", marginBottom: 16 }}>
         <Pressable
           onPress={() => setMode("nutrition")}
+          accessibilityRole="tab"
+          accessibilityLabel="Mode Nutrition"
           style={{
             flex: 1,
             padding: 12,
@@ -157,6 +194,8 @@ export default function Coach() {
 
         <Pressable
           onPress={() => setMode("sport")}
+          accessibilityRole="tab"
+          accessibilityLabel="Mode Sport"
           style={{
             flex: 1,
             padding: 12,
@@ -169,54 +208,78 @@ export default function Coach() {
         </Pressable>
       </View>
 
-      {/* Mode Nutrition */}
       {mode === "nutrition" && (
         <View style={{ marginBottom: 24 }}>
           {/* Analyse Image */}
           <View style={{ marginBottom: 16 }}>
             {selectedImage && (
-              <Image source={{ uri: selectedImage }} style={{ width: "100%", height: 200, marginBottom: 12, borderRadius: 12 }} />
+              <Image 
+                source={{ uri: selectedImage }} 
+                style={{ width: "100%", height: 220, marginBottom: 12, borderRadius: 12 }} 
+                accessibilityLabel="Photo du plat à analyser"
+              />
             )}
-            <Button title="Choisir une image" onPress={pickImage} />
-            <View style={{ height: 8 }} />
-            <Button title="Prendre une photo" onPress={takePhoto} />
+            <View style={{ gap: 8 }}>
+                <Button title="Choisir une image" onPress={pickImage} accessibilityLabel="Ouvrir la galerie photo" />
+                <Button title="Prendre une photo" onPress={takePhoto} accessibilityLabel="Ouvrir l'appareil photo" />
+            </View>
+            
             {selectedImage && (
-              <>
-                <View style={{ height: 8 }} />
-                <Button title="Analyser le plat" onPress={handleAnalyze} />
-                <View style={{ height: 8 }} />
-                <Button title="Réinitialiser" onPress={handleReset} color="#EF4444" />
-              </>
+              <View style={{ marginTop: 8, gap: 8 }}>
+                <Button title="Analyser le plat" onPress={handleAnalyze} color={primaryColor} accessibilityLabel="Lancer l'analyse IA" />
+                <Button title="Réinitialiser" onPress={handleReset} color="#EF4444" accessibilityLabel="Supprimer la photo" />
+              </View>
             )}
           </View>
 
-          {/* Résultats */}
+                                                                                                                              {/* Résultats avec bouton de confirmation IA */}
           {analysisResult && (
-            <View style={{ backgroundColor: cardColor, padding: 12, borderRadius: 12, marginBottom: 16, borderColor, borderWidth: 1 }}>
+            <View 
+              style={{ backgroundColor: cardColor, padding: 16, borderRadius: 12, marginBottom: 16, borderColor, borderWidth: 1 }}
+              accessible={true}
+              accessibilityLabel={`Résultat : ${analysisResult.dishName}`}
+            >
               <Text style={{ fontWeight: "bold", fontSize: 18, color: cardTextColor }}>{analysisResult.dishName}</Text>
               <Text style={{ color: mutedColor }}>Précision IA : {analysisResult.confidence}%</Text>
-              <Text style={{ color: mutedColor }}>Calories : {analysisResult.calories}</Text>
-              <Text style={{ color: mutedColor }}>Protéines : {analysisResult.proteins}g</Text>
-              <Text style={{ color: mutedColor }}>Glucides : {analysisResult.carbs}g</Text>
-              <Text style={{ color: mutedColor }}>Lipides : {analysisResult.fats}g</Text>
+              <View style={{ marginVertical: 8, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 8 }}>
+                <Text style={{ color: cardTextColor }}>Calories : {analysisResult.calories}</Text>
+                <Text style={{ color: cardTextColor }}>Protéines : {analysisResult.proteins}g | Glucides : {analysisResult.carbs}g</Text>
+              </View>
+
+              <TouchableOpacity 
+                onPress={handleConfirmIA}
+                disabled={isConfirmed}
+                style={{
+                    marginTop: 10,
+                    padding: 12,
+                    borderRadius: 8,
+                    backgroundColor: isConfirmed ? "#D1FAE5" : "#10B981",
+                    alignItems: "center"
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Confirmer l'exactitude de l'IA"                                          
+              >
+                <Text style={{ color: isConfirmed ? "#065F46" : "white", fontWeight: "bold" }}>
+                   {isConfirmed ? "✓ Analyse confirmée" : "Est-ce le bon plat ? Confirmer"}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
-          {/* Alerte IA */}
-          <View style={{ backgroundColor: cardColor, padding: 12, borderLeftWidth: 4, borderLeftColor: primaryColor, borderRadius: 8, marginBottom: 16, borderColor, borderWidth: 1 }}>
+          <View 
+            style={{ backgroundColor: cardColor, padding: 12, borderLeftWidth: 4, borderLeftColor: primaryColor, borderRadius: 8, marginBottom: 16, borderColor, borderWidth: 1 }}
+            accessible={true}
+          >
             <Text style={{ fontWeight: "bold", color: cardTextColor, marginBottom: 4 }}>Conseil IA</Text>
             <Text style={{ color: mutedColor }}>{nutritionAlert}</Text>
           </View>
 
-          {/* Suggestions repas */}
-          <Text style={{ fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>Suggestions de repas</Text>
+          <Text style={{ fontWeight: "bold", fontSize: 18, marginBottom: 8, color: textColor }}>Suggestions de repas</Text>
           {mealSuggestions.map((meal) => (
-            <View key={meal.id} style={{ backgroundColor: cardColor, padding: 12, borderRadius: 12, marginBottom: 8, borderColor, borderWidth: 1, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4 }}>
-              <Text style={{ fontWeight: "bold" }}>{meal.name}</Text>
-              <Text>Calories: {meal.calories}</Text>
-              <Text>Protéines: {meal.proteins}g</Text>
-              <Text>Prix: {meal.price}</Text>
-              <Text>Temps: {meal.time}</Text>
+            <View key={meal.id} style={{ backgroundColor: cardColor, padding: 12, borderRadius: 12, marginBottom: 8, borderColor, borderWidth: 1 }}>
+              <Text style={{ fontWeight: "bold", color: cardTextColor }}>{meal.name}</Text>
+              <Text style={{ color: mutedColor }}>{meal.calories} kcal • {meal.proteins}g Protéines</Text>
+              <Text style={{ color: mutedColor }}>Prix: {meal.price} • Temps: {meal.time}</Text>
               <View style={{ marginTop: 8 }}>
                 <Button title="Voir la recette" onPress={() => Alert.alert("Recette", "Fonctionnalité à venir")} />
               </View>
@@ -225,19 +288,33 @@ export default function Coach() {
         </View>
       )}
 
-      {/* Mode Sport */}
       {mode === "sport" && (
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>Programme du jour</Text>
+          <Text 
+            style={{ fontWeight: "bold", fontSize: 18, marginBottom: 8, color: textColor }}
+            accessibilityRole="header"
+          >
+            Programme du jour
+          </Text>
           {workoutPlan.map((exercise, idx) => (
-            <View key={exercise.id} style={{ backgroundColor: cardColor, padding: 12, borderRadius: 12, marginBottom: 8, borderColor, borderWidth: 1, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4 }}>
-              <Text style={{ fontWeight: "bold" }}>{idx + 1}. {exercise.name}</Text>
-              <Text>Séries: {exercise.sets}</Text>
-              <Text>Repos: {exercise.rest}</Text>
-              <Text>Muscles ciblés: {exercise.target}</Text>
+            <View 
+                key={exercise.id} 
+                style={{ backgroundColor: cardColor, padding: 12, borderRadius: 12, marginBottom: 8, borderColor, borderWidth: 1 }}
+                accessible={true}
+                accessibilityLabel={`Exercice ${idx + 1}: ${exercise.name}. ${exercise.sets}.`}
+            >
+              <Text style={{ fontWeight: "bold", color: cardTextColor }}>{idx + 1}. {exercise.name}</Text>
+              <Text style={{ color: mutedColor }}>Séries: {exercise.sets} • Repos: {exercise.rest}</Text>
+              <Text style={{ color: mutedColor }}>Cible: {exercise.target}</Text>
             </View>
           ))}
-          <Button title="Ajuster ma séance" onPress={() => Alert.alert("Fonctionnalité à venir")} />
+          <TouchableOpacity 
+            onPress={() => Alert.alert("Fonctionnalité à venir")}
+            style={{ backgroundColor: primaryColor, padding: 16, borderRadius: 12, marginTop: 10 }}
+            accessibilityRole="button"
+          >
+            <Text style={{ color: "white", textAlign: "center", fontWeight: "bold" }}>Ajuster ma séance</Text>
+          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
