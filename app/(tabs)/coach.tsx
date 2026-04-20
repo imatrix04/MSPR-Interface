@@ -1,6 +1,7 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Image, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -16,6 +17,7 @@ interface NutritionAnalysis {
 type CoachMode = "nutrition" | "sport";
 
 export default function Coach() {
+  const params = useLocalSearchParams();
   const [mode, setMode] = useState<CoachMode>("nutrition");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
@@ -32,7 +34,10 @@ export default function Coach() {
       }
     };
     fetchUser();
-  }, []);
+    if (params.mode === "nutrition" || params.mode === "sport") {
+      setMode(params.mode as CoachMode);
+    }
+  }, [params.mode]);
 
   const nutritionAlert = "L'IA a détecté un déficit en protéines hier.";
 

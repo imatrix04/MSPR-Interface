@@ -1,5 +1,6 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { Bell, Camera } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -22,6 +23,8 @@ export default function Home() {
     };
     fetchUser();
   }, []);
+
+  const router = useRouter(); 
 
   const caloriesConsumed = 1450;
   const caloriesGoal = 2000;
@@ -87,6 +90,7 @@ export default function Home() {
         accessibilityRole="button"
         accessibilityLabel="Analyser un repas avec la caméra"
         accessibilityHint="Ouvre l'appareil photo pour calculer les calories de votre plat"
+        onPress={() => router.push("/coach?mode=nutrition")}
       >
         <Camera size={32} color={primaryForeground} />
         <Text style={[styles.mainActionText, { color: primaryForeground }]}>Analyser mon repas</Text>
