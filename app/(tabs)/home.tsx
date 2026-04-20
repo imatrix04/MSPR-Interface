@@ -1,16 +1,28 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-import { Bell, Camera } from "lucide-react-native";
-import Svg, { Circle } from "react-native-svg";
+// TODO: Follow the react conventions.
+// In React, files shouldn't be larger than 150 lines.
+// There are 395(!) lines in this file. We need to optimize
+// it or the page will be heavy and become hard to
+// maintain.
+
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { Bell, Camera } from "lucide-react-native";
+import React from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 export default function Home() {
+  // TODO: Make those an object.
+  // We could turn this into an object.
+  // And since these are mock values, we can move these into 
+  // it's own file
   // Données mockées
   const userName = "Marie";
   const caloriesConsumed = 1450;
   const caloriesGoal = 2000;
   const caloriesProgress = (caloriesConsumed / caloriesGoal) * 100;
 
+  // TODO: Move these into their own style config file.
+  // Again, React conventions.
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const mutedColor = useThemeColor({}, 'mutedForeground');
@@ -21,6 +33,9 @@ export default function Home() {
   const primaryForeground = useThemeColor({}, 'primaryForeground');
   const destructiveColor = useThemeColor({}, 'destructive');
 
+  // TODO: Move those into their own file.
+  // These are mock values. We can move them
+  // into their own files.
   const macros = [
     { name: "Protéines", consumed: 85, goal: 120, unit: "g", color: "#10B981" },
     { name: "Glucides", consumed: 160, goal: 200, unit: "g", color: "#3B82F6" },
@@ -32,11 +47,13 @@ export default function Home() {
     duration: "45 min",
   };
 
+  // TODO: Turn this into a function.
   // Cercle SVG
   const radius = 88;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - caloriesProgress / 100);
 
+  // TODO: Decompose everything into it's own component
   return (
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor }]}> 
       {/* En-tête */}
@@ -169,6 +186,7 @@ export default function Home() {
   );
 }
 
+// TODO: Move this in a different file
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,

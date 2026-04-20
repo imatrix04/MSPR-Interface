@@ -1,8 +1,10 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Home from "../screens/Home";
+import { Bot, Home, User } from "lucide-react-native"; // version RN de lucide
+// TODO: Implement those files.
+// Is this file even used?
 import Coach from "../screens/Coach";
+import Home2 from "../screens/Home";
 import Profile from "../screens/Profile";
-import { Home2, Bot, User } from "lucide-react-native"; // version RN de lucide
 
 const Tab = createBottomTabNavigator();
 
@@ -23,7 +25,7 @@ export default function BottomNav() {
         tabBarIcon: ({ color, size }) => {
           switch (route.name) {
             case "Home":
-              return <Home2 color={color} size={size} />;
+              return <Home color={color} size={size} />;
             case "Coach":
               return <Bot color={color} size={size} />;
             case "Profile":
@@ -34,7 +36,7 @@ export default function BottomNav() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={Home} />
+      <Tab.Screen name="Home" component={Home2} />
       <Tab.Screen name="Coach" component={Coach} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>

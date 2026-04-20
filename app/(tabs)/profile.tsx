@@ -1,9 +1,14 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, ScrollView, Button, Pressable, Image, Alert } from "react-native";
-import { router } from "expo-router";
+// TODO: Follow the react conventions.
+// In React, files shouldn't be larger than 150 lines.
+// There are 216 lines in this file. We need to optimize
+// it or the page will be heavy and become hard to
+// maintain.
+import { useThemeColor } from '@/hooks/use-theme-color';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { router } from "expo-router";
+import React, { useState } from "react";
+import { Alert, Button, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 type Allergies = {
   gluten: boolean;
@@ -20,6 +25,7 @@ type Equipment = {
 };
 
 export default function Profile() {
+  // TODO: Mock values 
   const [profile, setProfile] = useState({
     name: "Marie Dupont",
     goal: "weight-loss",
@@ -39,6 +45,8 @@ export default function Profile() {
     photoUri: null as string | null,
   });
 
+  // TODO: Move these to style file.
+  // FIXME: Unused.
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const mutedColor = useThemeColor({}, 'mutedForeground');
@@ -48,8 +56,11 @@ export default function Profile() {
   const primaryColor = useThemeColor({}, 'primary');
   const destructiveColor = useThemeColor({}, 'destructive');
 
+  // TODO: Move these function to theire own media file
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
+      // FIXME: Deprecated.
+      // This is deprecated. We need to use ImagePicker.MediaType
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 1,
@@ -57,6 +68,7 @@ export default function Profile() {
     if (!result.canceled) setProfile({ ...profile, photoUri: result.assets[0].uri });
   };
 
+  // Yeah, this one too.
   const takePhoto = async () => {
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
@@ -74,6 +86,7 @@ export default function Profile() {
     router.replace("/login");
   };
 
+  // TODO: Decompose this into multiple components.
   return (
     <ScrollView contentContainerStyle={{ padding: 16, backgroundColor }}>
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 12, color: cardTextColor }}>Mon Profil</Text>
