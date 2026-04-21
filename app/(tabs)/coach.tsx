@@ -129,24 +129,33 @@ export default function Coach() {
         type: "image/jpeg",
       } as any);
 
-      const response = await fetch(`${API_URL}/api/ai/predict`, {
+      const aiResponse = await fetch(`${API_URL}/api/ai/predict`, {
         method: "POST",
         body: formData,
       });
 
-      const data = await response.json();
+      const aiData = await aiResponse.json();
 
-      if (data.status === "success") {
-        setAnalysisResult({
-          dishName: data.prediction,
-          confidence: data.confidence_percent,
-          calories: MockData['burger'].calories,
-          proteins: MockData['burger'].protein,
-          carbs: MockData['burger'].carbs,
-          fats: MockData['burger'].fat,
+      if (aiResponse.ok && aiData.prediction) {
+        const label = aiData.prediction;
+
+        const token = await AsyncStorage.getItem("authToken");
+        const saveResponse = await fetch(`${API_URL}/api/calories/add-from-ai`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ prediction: label })
         });
-      } else {
-        Alert.alert("Erreur IA", data.message || "Impossible d'analyser l'image.");
+
+        if (saveResponse.ok) {
+          const result = await saveResponse.json();
+          Alert.alert(
+            "Analyse réussie", 
+            `Plat détecté : ${label}\n+${result.added.calories} kcal ajoutées !`
+          );
+        }
       }
     } catch (error) {
       console.error(error);
