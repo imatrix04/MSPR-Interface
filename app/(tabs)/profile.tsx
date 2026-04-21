@@ -44,6 +44,43 @@ export default function Profile() {
       }
     };
     fetchUserData();
+
+    const loadData = async () => {
+      try {
+        // 1. Récupération locale pour le nom et l'avatar
+        const userString = await AsyncStorage.getItem("userData");
+        if (userString) {
+          const user = JSON.parse(userString);
+          const fullName = `${user.firstname} ${user.lastname}`;
+          setProfile(prev => ({ ...prev, name: fullName }));
+          
+          const firstInitial = user.firstname ? user.firstname.charAt(0).toUpperCase() : "";
+          const lastInitial = user.lastname ? user.lastname.charAt(0).toUpperCase() : "";
+          setInitials(firstInitial + lastInitial);
+        }
+
+        // 2. NOUVEAU : Récupération du profil depuis MongoDB
+        const token = await AsyncStorage.getItem("authToken");
+        const API_URL = process.env.EXPO_PUBLIC_API_URL; // Ton IP locale
+
+        if (token) {
+          const response = await fetch(`${API_URL}/api/profil`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (response.ok) {
+            const dbProfile = await response.json();
+            // On met à jour le state avec les vraies données de la BDD !
+            setProfile(prev => ({ ...prev, ...dbProfile }));
+          }
+        }
+      } catch (error) {
+        console.error("Erreur de récupération profil", error);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -67,8 +104,33 @@ export default function Profile() {
     router.replace("/login");
   };
 
-  const handleSave = () => {
-    Alert.alert("Profil mis à jour", "L'Intelligence Artificielle prendra en compte ces nouveaux critères pour vos prochaines recommandations.");
+  const handleSave = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+      const response = await fetch(`${API_URL}/api/profil`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        // On envoie tout notre objet "profile" au format JSON
+        body: JSON.stringify(profile)
+      });
+
+      if (response.ok) {
+        Alert.alert(
+          "Succès", 
+          "Profil sauvegardé avec succès dans la base de données ! L'IA prendra en compte vos critères."
+        );
+      } else {
+        Alert.alert("Erreur", "Impossible de sauvegarder le profil.");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erreur", "Problème de connexion au serveur Backend.");
+    }
   };
 
   const Selector = ({ label, options, selectedValue, onSelect }: any) => (
