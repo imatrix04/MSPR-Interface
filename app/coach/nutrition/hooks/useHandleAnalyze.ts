@@ -4,8 +4,6 @@ import { getAiPrediction, postAiSave } from "../services/ai.service";
 
 export const handleAnalyze = async (selectedImage: string) => {
     if (!selectedImage) return;
-    
-    const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
     try {
       const formData: FormData = new FormData();
