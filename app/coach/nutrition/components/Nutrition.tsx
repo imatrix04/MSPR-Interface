@@ -45,6 +45,7 @@ export const Nutrition = () => {
         setIsConfirmed(false);
     };
 
+    // TODO: Decompose these further
     return (
         <>
             <View style={{ marginBottom: 24 }}>
