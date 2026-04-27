@@ -5,7 +5,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import CheckboxComponent from '../profile/components/CheckBoxComponent';
+import SelectorComponent from '../profile/components/SelectorComponent';
+import styles from '../profile/styles/profile.style';
 
 export default function Profile() {
   const router = useRouter();
@@ -91,7 +94,6 @@ export default function Profile() {
   const primaryColor = useThemeColor({}, 'primary');
   const primaryForeground = useThemeColor({}, 'primaryForeground');
   const destructiveColor = useThemeColor({}, 'destructive');
-  const mutedBg = useThemeColor({}, 'muted'); 
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 1 });
@@ -133,58 +135,6 @@ export default function Profile() {
     }
   };
 
-  const Selector = ({ label, options, selectedValue, onSelect }: any) => (
-    <View style={styles.section}>
-      <Text style={[styles.label, { color: cardTextColor }]}>{label}</Text>
-      <View style={styles.chipContainer}>
-        {options.map((opt: string) => (
-          <TouchableOpacity
-            key={opt}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: selectedValue === opt }}
-            style={[
-              styles.chip, 
-              { borderColor },
-              selectedValue === opt 
-                ? { backgroundColor: primaryColor, borderColor: primaryColor } 
-                : { backgroundColor: mutedBg } 
-            ]}
-            onPress={() => onSelect(opt)}
-          >
-            <Text style={{ 
-              color: selectedValue === opt ? primaryForeground : cardTextColor, 
-              fontSize: 13, 
-              fontWeight: "600" 
-            }}>
-              {opt}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const CustomCheckbox = ({ label, value, onChange }: any) => (
-    <TouchableOpacity 
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: value }}
-      onPress={onChange} 
-      style={styles.checkboxRow}
-    >
-      <View style={[
-        styles.checkbox, 
-        { 
-          borderColor: value ? primaryColor : borderColor, 
-          backgroundColor: value ? primaryColor : mutedBg 
-        }
-      ]}>
-        {/* On ajoute une petite encoche blanche quand c'est coché */}
-        {value && <Text style={{ color: primaryForeground, fontWeight: "bold", fontSize: 14, marginTop: -2 }}>✓</Text>}
-      </View>
-      <Text style={{ color: cardTextColor }}>{label}</Text>
-    </TouchableOpacity>
-  );
-
   return (
     <ThemedView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16, backgroundColor, paddingBottom: 100 }}>
@@ -220,14 +170,14 @@ export default function Profile() {
         <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
           <Text style={[styles.cardTitle, { color: primaryColor }]}>🥗 Paramètres Nutrition</Text>
           
-          <Selector 
+          <SelectorComponent 
             label="Objectif de santé" 
             options={["Perte de poids", "Prise de masse", "Équilibre", "Performance"]} 
             selectedValue={profile.nutritionGoal} 
             onSelect={(v: string) => setProfile({...profile, nutritionGoal: v})} 
           />
 
-          <Selector 
+          <SelectorComponent  
             label="Préférences alimentaires" 
             options={["Omnivore", "Végétarien", "Végétalien", "Poisson uniquement"]} 
             selectedValue={profile.diet} 
@@ -239,7 +189,7 @@ export default function Profile() {
             <View style={styles.checkboxContainer}>
               {/* Utilisation du nouveau composant Checkbox */}
               {Object.entries(profile.allergies).map(([key, value]) => (
-                <CustomCheckbox 
+                <CheckboxComponent 
                   key={key}
                   label={key}
                   value={value}
@@ -254,14 +204,14 @@ export default function Profile() {
         <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
           <Text style={[styles.cardTitle, { color: primaryColor }]}>💪 Paramètres Sportifs</Text>
           
-          <Selector 
+          <SelectorComponent  
             label="Objectif d'entraînement" 
             options={["Perte de graisse", "Musculation", "Endurance", "Santé générale"]} 
             selectedValue={profile.sportGoal} 
             onSelect={(v: string) => setProfile({...profile, sportGoal: v})} 
           />
 
-          <Selector 
+          <SelectorComponent  
             label="Niveau de forme actuel" 
             options={["Débutant", "Intermédiaire", "Avancé"]} 
             selectedValue={profile.fitnessLevel} 
@@ -273,7 +223,7 @@ export default function Profile() {
             <View style={styles.checkboxContainer}>
               {/* Utilisation du nouveau composant Checkbox */}
               {Object.entries(profile.equipment).map(([key, value]) => (
-                <CustomCheckbox 
+                <CheckboxComponent 
                   key={key}
                   label={key}
                   value={value}
@@ -310,28 +260,3 @@ export default function Profile() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  headerProfile: { flexDirection: "row", alignItems: "center", marginBottom: 24 },
-  avatar: { width: 80, height: 80, borderRadius: 40 },
-  avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
-  card: { borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  cardTitle: { fontSize: 18, fontWeight: "800", marginBottom: 16 },
-  section: { marginBottom: 16 },
-  label: { marginBottom: 8, fontWeight: "700", fontSize: 14 },
-  input: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 15 },
-  chipContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1 },
-  checkboxContainer: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  checkboxRow: { flexDirection: "row", alignItems: "center", width: "45%", marginBottom: 8 },
-  checkbox: { 
-    width: 24, 
-    height: 24, 
-    borderRadius: 6, 
-    borderWidth: 1, 
-    marginRight: 10,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  actionBtn: { padding: 16, borderRadius: 12, alignItems: "center" }
-});
