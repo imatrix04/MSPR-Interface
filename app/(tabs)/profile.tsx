@@ -5,25 +5,27 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import CheckboxComponent from '../profile/components/CheckBoxComponent';
-import SelectorComponent from '../profile/components/SelectorComponent';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import ProfileNutritionComponent from '../profile/components/ProfileNutritionComponent';
+import ProfileSportComponent from '../profile/components/ProfileSportComponent';
+import { useSaveProfile } from '../profile/hooks/useSaveProfile';
+import putSaveProfileResponse from '../profile/models/putSaveProfile.model';
 import styles from '../profile/styles/profile.style';
 
 export default function Profile() {
   const router = useRouter();
   
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<putSaveProfileResponse>({
     name: "",
     nutritionGoal: "Perte de poids", 
     diet: "Omnivore", 
     budget: "Moyen",
-    allergies: { Gluten: false, Lactose: false, Arachides: true, Crustacés: false },
+    allergies: { Gluten: false, Lactose: false, Arachides: true, Crustaces: false },
     sportGoal: "Renforcement musculaire", 
     fitnessLevel: "Débutant", 
     equipment: { "Salle de sport": false, "Poids à domicile": true, "Aucun (Poids du corps)": false },
     limitations: "Douleur au genou droit",
-    photoUri: null as string | null,
+    photoUri: undefined,
   });
 
   const [initials, setInitials] = useState("");
@@ -106,35 +108,6 @@ export default function Profile() {
     router.replace("/login");
   };
 
-  const handleSave = async () => {
-    try {
-      const token = await AsyncStorage.getItem("authToken");
-      const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-      const response = await fetch(`${API_URL}/api/profil`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        // On envoie tout notre objet "profile" au format JSON
-        body: JSON.stringify(profile)
-      });
-
-      if (response.ok) {
-        Alert.alert(
-          "Succès", 
-          "Profil sauvegardé avec succès dans la base de données ! L'IA prendra en compte vos critères."
-        );
-      } else {
-        Alert.alert("Erreur", "Impossible de sauvegarder le profil.");
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erreur", "Problème de connexion au serveur Backend.");
-    }
-  };
-
   return (
     <ThemedView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16, backgroundColor, paddingBottom: 100 }}>
@@ -167,91 +140,23 @@ export default function Profile() {
         </View>
 
         {/* SECTION NUTRITION */}
-        <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
-          <Text style={[styles.cardTitle, { color: primaryColor }]}>🥗 Paramètres Nutrition</Text>
-          
-          <SelectorComponent 
-            label="Objectif de santé" 
-            options={["Perte de poids", "Prise de masse", "Équilibre", "Performance"]} 
-            selectedValue={profile.nutritionGoal} 
-            onSelect={(v: string) => setProfile({...profile, nutritionGoal: v})} 
-          />
-
-          <SelectorComponent  
-            label="Préférences alimentaires" 
-            options={["Omnivore", "Végétarien", "Végétalien", "Poisson uniquement"]} 
-            selectedValue={profile.diet} 
-            onSelect={(v: string) => setProfile({...profile, diet: v})} 
-          />
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: cardTextColor }]}>Allergies & Intolérances</Text>
-            <View style={styles.checkboxContainer}>
-              {/* Utilisation du nouveau composant Checkbox */}
-              {Object.entries(profile.allergies).map(([key, value]) => (
-                <CheckboxComponent 
-                  key={key}
-                  label={key}
-                  value={value}
-                  onChange={() => setProfile({...profile, allergies: {...profile.allergies, [key]: !value}})}
-                />
-              ))}
-            </View>
-          </View>
-        </View>
+        <ProfileNutritionComponent
+          profile={profile}
+          setProfile={setProfile}
+        />
 
         {/* SECTION SPORT */}
-        <View style={[styles.card, { backgroundColor: cardColor, borderColor }]}>
-          <Text style={[styles.cardTitle, { color: primaryColor }]}>💪 Paramètres Sportifs</Text>
-          
-          <SelectorComponent  
-            label="Objectif d'entraînement" 
-            options={["Perte de graisse", "Musculation", "Endurance", "Santé générale"]} 
-            selectedValue={profile.sportGoal} 
-            onSelect={(v: string) => setProfile({...profile, sportGoal: v})} 
-          />
-
-          <SelectorComponent  
-            label="Niveau de forme actuel" 
-            options={["Débutant", "Intermédiaire", "Avancé"]} 
-            selectedValue={profile.fitnessLevel} 
-            onSelect={(v: string) => setProfile({...profile, fitnessLevel: v})} 
-          />
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: cardTextColor }]}>Équipement disponible</Text>
-            <View style={styles.checkboxContainer}>
-              {/* Utilisation du nouveau composant Checkbox */}
-              {Object.entries(profile.equipment).map(([key, value]) => (
-                <CheckboxComponent 
-                  key={key}
-                  label={key}
-                  value={value}
-                  onChange={() => setProfile({...profile, equipment: {...profile.equipment, [key]: !value}})}
-                />
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: cardTextColor }]}>Limitations physiques (Blessures)</Text>
-            <TextInput 
-              value={profile.limitations} 
-              onChangeText={t => setProfile({...profile, limitations: t})} 
-              style={[styles.input, { borderColor: borderColor, backgroundColor: cardColor, color: cardTextColor, height: 80 }]} 
-              multiline
-              placeholder="Ex: Douleur épaule, asthme..."
-              placeholderTextColor={mutedColor}
-            />
-          </View>
-        </View>
+        <ProfileSportComponent
+          profile={profile}
+          setProfile={setProfile}
+        />
 
         <View style={{ marginTop: 16 }}>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: primaryColor }]} onPress={handleSave}>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: primaryColor }]} onPress={() => {useSaveProfile(profile)}}>
             <Text style={{ color: primaryForeground, fontWeight: "bold", fontSize: 16 }}>Enregistrer pour l'IA</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "transparent", borderWidth: 1, borderColor: destructiveColor, marginTop: 12 }]} onPress={handleLogout}>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "transparent", borderWidth: 1, borderColor: destructiveColor, marginTop: 12 }]} onPress={() => {handleLogout()}}>
             <Text style={{ color: destructiveColor, fontWeight: "bold", fontSize: 16 }}>Se déconnecter</Text>
           </TouchableOpacity>
         </View>
