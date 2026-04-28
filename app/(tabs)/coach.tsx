@@ -30,6 +30,7 @@ export default function Coach() {
   const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
   const [firstName, setFirstName] = useState(""); 
   const [isConfirmed, setIsConfirmed] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   // Récupération du prénom
   useEffect(() => {
@@ -114,54 +115,83 @@ export default function Coach() {
     }
   };
 
-  // TODO: Move this function in a service file
   const handleAnalyze = async () => {
     if (!selectedImage) return;
+    setLoading(true);
     setIsConfirmed(false);
-    
+    setAnalysisResult(null);
+
     const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
     try {
       const formData = new FormData();
       formData.append("image", {
-        uri: selectedImage,
+        uri:  selectedImage,
         name: "photo.jpg",
         type: "image/jpeg",
       } as any);
 
       const aiResponse = await fetch(`${API_URL}/api/ai/predict`, {
-        method: "POST",
-        body: formData,
+        method:  "POST",
+        body:    formData,
+        headers: { "Accept": "application/json" },
       });
 
       const aiData = await aiResponse.json();
 
-      if (aiResponse.ok && aiData.prediction) {
-        const label = aiData.prediction;
+      if (!aiResponse.ok) {
+        Alert.alert("Erreur", aiData.message || `Erreur ${aiResponse.status}`);
+        return;
+      }
+
+      if (aiData.prediction) {
+        // ✅ Fix 1 : afficher le résultat immédiatement
+        setAnalysisResult({
+          dishName:   aiData.prediction,
+          confidence: aiData.confidence_percent ?? 0,
+          calories:   0,
+          proteins:   0,
+          carbs:      0,
+          fats:       0,
+        });
 
         const token = await AsyncStorage.getItem("authToken");
         const saveResponse = await fetch(`${API_URL}/api/calories/add-from-ai`, {
-          method: "POST",
+          method:  "POST",
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            "Content-Type":  "application/json",
+            "Authorization": `Bearer ${token}`,
           },
-          body: JSON.stringify({ prediction: label })
+          body: JSON.stringify({ prediction: aiData.prediction }),
         });
 
         if (saveResponse.ok) {
           const result = await saveResponse.json();
+          // ✅ Fix 2 : mettre à jour avec les vraies valeurs nutritionnelles
+          setAnalysisResult(prev => ({
+            ...prev!,
+            calories: result.added?.calories ?? 0,
+            proteins: result.added?.proteins ?? 0,
+            carbs:    result.added?.carbs    ?? 0,
+            fats:     result.added?.fats     ?? 0,
+          }));
           Alert.alert(
-            "Analyse réussie", 
-            `Plat détecté : ${label}\n+${result.added.calories} kcal ajoutées !`
+            "✅ Analyse réussie",
+            `Plat : ${aiData.prediction}\n+${result.added?.calories ?? "?"} kcal ajoutées !`
           );
+        } else {
+          Alert.alert("⚠️ Détecté", `Plat : ${aiData.prediction}\nImpossible de sauvegarder les calories.`);
         }
       }
+
     } catch (error) {
       console.error(error);
-      Alert.alert("Erreur", "Impossible de joindre le serveur. Vérifiez votre connexion.");
+      Alert.alert("Erreur", "Impossible de joindre le serveur.");
+    } finally {
+      setLoading(false); // ✅ Fix 3
     }
   };
+
 
   const handleConfirmIA = () => {
     setIsConfirmed(true);
