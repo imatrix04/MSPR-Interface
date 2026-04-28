@@ -1,8 +1,8 @@
 import { pickImage, takePhoto } from "@/app/utils/media-control";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
 import { Alert, Button, Image, Text, TouchableOpacity, View } from "react-native";
-import { handleAnalyze } from "../hooks/useHandleAnalyze";
 import { mealSuggestions } from "../mocks/nutrition.mock";
 import { NutritionAnalysis } from "../models/analysis.model";
 
@@ -12,6 +12,7 @@ export const Nutrition = () => {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const handleSelectedImage = async (action: 'pick' | 'take') => {
         switch (action) {
@@ -26,7 +27,7 @@ export const Nutrition = () => {
                 break;
         }
     }
- 
+
     const handleConfirmIA = () => {
         setIsConfirmed(true);
         Alert.alert("Merci !", "Votre confirmation aide l'IA à apprendre.");
@@ -43,6 +44,86 @@ export const Nutrition = () => {
         setSelectedImage(null);
         setAnalysisResult(null);
         setIsConfirmed(false);
+    };
+
+    // TODO: This shouldn't be here anymore
+    // With the merge, this function was changed.
+    // I need to move this elsewhere
+    const handleAnalyze = async () => {
+        if (!selectedImage) return;
+        setLoading(true);
+        setIsConfirmed(false);
+        setAnalysisResult(null);
+
+        const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+        try {
+            const formData = new FormData();
+            formData.append("image", {
+                uri: selectedImage,
+                name: "photo.jpg",
+                type: "image/jpeg",
+            } as any);
+
+            const aiResponse = await fetch(`${API_URL}/api/ai/predict`, {
+                method: "POST",
+                body: formData,
+                headers: { "Accept": "application/json" },
+            });
+
+            const aiData = await aiResponse.json();
+
+            if (!aiResponse.ok) {
+                Alert.alert("Erreur", aiData.message || `Erreur ${aiResponse.status}`);
+                return;
+            }
+
+            if (aiData.prediction) {
+                // ✅ Fix 1 : afficher le résultat immédiatement
+                setAnalysisResult({
+                    dishName: aiData.prediction,
+                    confidence: aiData.confidence_percent ?? 0,
+                    calories: 0,
+                    proteins: 0,
+                    carbs: 0,
+                    fats: 0,
+                });
+
+                const token = await AsyncStorage.getItem("authToken");
+                const saveResponse = await fetch(`${API_URL}/api/calories/add-from-ai`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ prediction: aiData.prediction }),
+                });
+
+                if (saveResponse.ok) {
+                    const result = await saveResponse.json();
+                    // ✅ Fix 2 : mettre à jour avec les vraies valeurs nutritionnelles
+                    setAnalysisResult(prev => ({
+                        ...prev!,
+                        calories: result.added?.calories ?? 0,
+                        proteins: result.added?.proteins ?? 0,
+                        carbs: result.added?.carbs ?? 0,
+                        fats: result.added?.fats ?? 0,
+                    }));
+                    Alert.alert(
+                        "✅ Analyse réussie",
+                        `Plat : ${aiData.prediction}\n+${result.added?.calories ?? "?"} kcal ajoutées !`
+                    );
+                } else {
+                    Alert.alert("⚠️ Détecté", `Plat : ${aiData.prediction}\nImpossible de sauvegarder les calories.`);
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Erreur", "Impossible de joindre le serveur.");
+        } finally {
+            setLoading(false); // ✅ Fix 3
+        }
     };
 
     // TODO: Decompose these further
@@ -67,7 +148,7 @@ export const Nutrition = () => {
                         <View style={{ marginTop: 8, gap: 8 }}>
                             <Button title="Analyser le plat" onPress={() => {
                                 setIsConfirmed(false)
-                                handleAnalyze(selectedImage)
+                                handleAnalyze()
                             }} color={primaryColor} accessibilityLabel="Lancer l'analyse IA" />
                             <Button title="Réinitialiser" onPress={handleReset} color="#EF4444" accessibilityLabel="Supprimer la photo" />
                         </View>
